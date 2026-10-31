@@ -19,7 +19,7 @@
  *   CRC 多项式 x^6+x+1，覆盖前 18bit
  *
  * 编码器首位尚未就绪，因此每次读 32bit，左移一位丢弃首位，
- * 再取高 24bit 作为有效帧。此处理与原寄存器版本一致。
+ * 再取高 24bit 作为有效帧。
  * ============================================================ */
 #include "main.h"
 #include "spi.h"
@@ -120,18 +120,32 @@ static uint8_t Encoder_ReadAngle(uint16_t *angle, uint8_t *mag, uint8_t *crc_rx,
  */
 uint8_t Encoder_All_Function(void)
 {
-    if (Encoder_ReadAngle(&raw14, &mag, &crc_rx, &valid24) == 0)
+    uint16_t raw14_rx;
+    uint8_t mag_rx;
+    uint8_t crc_rx_frame;
+    uint8_t crc_calc_frame;
+    uint32_t valid24_frame;
+    int32_t cdeg_frame;
+
+    if (Encoder_ReadAngle(&raw14_rx, &mag_rx, &crc_rx_frame, &valid24_frame) == 0)
     {
         return 0;
     }
 
-    crc_calc = crc6_calc(((uint32_t)raw14 << 4) | mag);
+    crc_calc_frame = crc6_calc(((uint32_t)raw14_rx << 4) | mag_rx);
 
     // 根据 CRC 校验结果处理数据
-    if (crc_calc == crc_rx) {
+    if (crc_calc_frame == crc_rx_frame) {
         // 仅在 CRC 校验成功时更新角度，失败时保留上一次有效值
         // 将 14bit 原始角度转换为 0.01 度单位，36000 = 360 * 100，16384 = 2^14
-        cdeg = (int32_t)((uint32_t)raw14 * 36000 / 16384);
+        cdeg_frame = (int32_t)((uint32_t)raw14_rx * 36000 / 16384);
+
+        raw14 = raw14_rx;
+        mag = mag_rx;
+        crc_rx = crc_rx_frame;
+        crc_calc = crc_calc_frame;
+        valid24 = valid24_frame;
+        cdeg = cdeg_frame;
         return 1; // 返回成功标志
         
     } else {

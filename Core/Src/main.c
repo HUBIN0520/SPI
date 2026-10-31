@@ -100,9 +100,9 @@ int main(void)
     OLED_ShowString(1,1,"result:");
     OLED_ShowNum(1, 8, Encoder_All_Function(), 3);
     OLED_ShowString(2, 1, "angle:");
-    OLED_ShowString(2, 12, ".");
+    OLED_ShowString(2, 10, ".");
     OLED_ShowNum(2, 7, cdeg / 100, 3);
-    OLED_ShowNum(2, 13, cdeg % 100, 2);
+    OLED_ShowNum(2, 11, cdeg % 100, 2);
     OLED_ShowString(3, 1, "mag:");
     OLED_ShowNum(3, 5, mag, 1);
     HAL_Delay(2000);
