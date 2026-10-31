@@ -38,23 +38,18 @@ int32_t cdeg;// 角度，单位为 0.01 度
 /**
  * @brief 读取编码器数据
  * @param rx 接收数据的数组
+ * @return HAL_OK 表示读取成功
  */
-static void Encoder_Read4(uint8_t rx[4]) //1 位无效首位 + 24 位有效帧 + 7 位额外时钟
+static HAL_StatusTypeDef Encoder_Read4(uint8_t rx[4])
 {
+    const uint8_t tx[4] = {0};
+    HAL_StatusTypeDef status;
+
     SPI_LOW();
-    HAL_Delay(1);  //延时 1ms，确保 CSN 拉低稳定
-    uint8_t txData = 0x00;
-    HAL_SPI_Transmit(&hspi1, &txData, 1, 10);  //发送无效占位字符，开启SPI传输
-   for (int i = 0; i < 4; i++)
-    {
-        while(__HAL_SPI_GET_FLAG(&hspi1, SPI_FLAG_TXE) == RESET);  //等待发送缓冲区为空
-        HAL_SPI_Transmit(&hspi1, &txData, 1, 10);  //发送无效占位字符
-        while(__HAL_SPI_GET_FLAG(&hspi1, SPI_FLAG_RXNE) == RESET);  //等待接收缓冲区非空
-        HAL_SPI_Receive(&hspi1, &rx[i], 1, 10);  //接收数据
-    }
-    HAL_Delay(1);  //延时 1ms，确保 SPI 传输完成
-    while(__HAL_SPI_GET_FLAG(&hspi1, SPI_FLAG_BSY) == SET);  //等待SPI总线空闲
+    status = HAL_SPI_TransmitReceive(&hspi1, tx, rx, 4, 10);
     SPI_HIGH();
+
+    return status;
 }
 
 /**
@@ -91,15 +86,19 @@ static uint8_t crc6_calc(uint32_t data18)
  * @param angle 指向存储角度的变量的指针
  * @param mag 指向存储磁场状态的变量的指针
  * @param crc 指向存储 CRC 校验码的变量的指针
- * @return 返回有效的 24bit 数据
+ * @param valid24 指向存储有效 24bit 数据的变量的指针
+ * @return 1 表示 SPI 读取成功，0 表示失败
  */
-static uint32_t Encoder_ReadAngle(uint16_t *angle, uint8_t *mag, uint8_t *crc_rx)
+static uint8_t Encoder_ReadAngle(uint16_t *angle, uint8_t *mag, uint8_t *crc_rx,
+                                 uint32_t *valid24)
 {
     uint8_t rx[4];// 接收缓冲区，4 字节
     uint32_t frame32;// 32bit 帧数据
-    uint32_t valid24;// 有效的 24bit 数据
 
-    Encoder_Read4(rx);// 读取 4 字节数据
+    if (Encoder_Read4(rx) != HAL_OK)
+    {
+        return 0;
+    }
 
     // 将接收到的 4 字节数据组合成一个 32 位整数
     frame32 = ((uint32_t)rx[0] << 24) | 
@@ -108,11 +107,11 @@ static uint32_t Encoder_ReadAngle(uint16_t *angle, uint8_t *mag, uint8_t *crc_rx
     (uint32_t)rx[3];
 
     frame32 <<= 1;  // 左移一位，丢弃首位无效数据
-    valid24 = (frame32 >> 8) & 0x00FFFFFFUL;  // 取高 24 位作为有效帧,丢弃低 8 位的额外时钟
-    *angle = (valid24 >> 18) & 0x3FFF;  // 取高 14bit，作为角度值
-    *mag = (valid24 >> 14) & 0x0F;      // 取中间 4bit，作为磁场状态
-    *crc_rx = valid24 & 0x3F;           // 取低 6bit，作为 CRC 校验码
-    return valid24;
+    *valid24 = (frame32 >> 8) & 0x00FFFFFFUL;  // 取高 24 位作为有效帧,丢弃低 8 位的额外时钟
+    *angle = (*valid24 >> 18) & 0x3FFF;  // 取高 14bit，作为角度值
+    *mag = (*valid24 >> 14) & 0x0F;      // 取中间 4bit，作为磁场状态
+    *crc_rx = *valid24 & 0x3F;           // 取低 6bit，作为 CRC 校验码
+    return 1;
 }
     
 /**
@@ -121,14 +120,18 @@ static uint32_t Encoder_ReadAngle(uint16_t *angle, uint8_t *mag, uint8_t *crc_rx
  */
 uint8_t Encoder_All_Function(void)
 {
-    valid24 = Encoder_ReadAngle(&raw14, &mag, &crc_rx);
-    crc_calc = crc6_calc((uint32_t)raw14 << 4 | mag);
-    // 将 14bit 原始角度转换为 0.01 度单位，36000 = 360 * 100，16384 = 2^14
-    cdeg = (int32_t)((uint32_t)raw14 * 36000 / 16384);
+    if (Encoder_ReadAngle(&raw14, &mag, &crc_rx, &valid24) == 0)
+    {
+        return 0;
+    }
+
+    crc_calc = crc6_calc(((uint32_t)raw14 << 4) | mag);
 
     // 根据 CRC 校验结果处理数据
     if (crc_calc == crc_rx) {
-        // CRC 校验成功，处理有效数据
+        // 仅在 CRC 校验成功时更新角度，失败时保留上一次有效值
+        // 将 14bit 原始角度转换为 0.01 度单位，36000 = 360 * 100，16384 = 2^14
+        cdeg = (int32_t)((uint32_t)raw14 * 36000 / 16384);
         return 1; // 返回成功标志
         
     } else {
