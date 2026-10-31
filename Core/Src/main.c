@@ -106,6 +106,7 @@ int main(void)
     deg = cdeg % 100;
     OLED_ShowNum(2, 1, angle, 3);
     OLED_ShowNum(2, 5, deg, 2);
+    HAL_Delay(100);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
