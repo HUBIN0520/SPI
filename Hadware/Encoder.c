@@ -21,6 +21,16 @@
  * 编码器首位尚未就绪，因此每次读 32bit，左移一位丢弃首位，
  * 再取高 24bit 作为有效帧。此处理与原寄存器版本一致。
  * ============================================================ */
+#include "main.h"
+#include "spi.h"
+#include "Encoder.h"
+
+uint16_t raw14;
+uint8_t mag;
+uint8_t crc_rx;
+uint8_t crc_calc;
+uint32_t valid24;
+int32_t cdeg;// 角度，单位为 0.01 度 
 
 #define SPI_HIGH()  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET)
 #define SPI_LOW()   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET)
@@ -111,13 +121,6 @@ static uint32_t Encoder_ReadAngle(uint16_t *angle, uint8_t *mag, uint8_t *crc_rx
  */
 uint8_t Encoder_All_Function(void)
 {
-    uint16_t raw14;
-    uint8_t mag;
-    uint8_t crc_rx;
-    uint8_t crc_calc;
-    uint32_t valid24;
-    int32_t cdeg;// 角度，单位为 0.01 度 
-
     valid24 = Encoder_ReadAngle(&raw14, &mag, &crc_rx);
     crc_calc = crc6_calc((uint32_t)raw14 << 4 | mag);
     // 将 14bit 原始角度转换为 0.01 度单位，36000 = 360 * 100，16384 = 2^14
