@@ -91,22 +91,21 @@ int main(void)
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
   OLED_Init();
-  uint8_t result;
-  uint16_t angle;
-  uint8_t deg;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    result = Encoder_All_Function();
-    OLED_ShowNum(1, 1, result, 3);
-    angle =cdeg / 100;
-    deg = cdeg % 100;
-    OLED_ShowNum(2, 1, angle, 3);
-    OLED_ShowNum(2, 5, deg, 2);
-    HAL_Delay(100);
+    OLED_ShowString(1,1,"result:");
+    OLED_ShowNum(1, 8, Encoder_All_Function(), 3);
+    OLED_ShowString(2, 1, "angle:");
+    OLED_ShowString(2, 12, ".");
+    OLED_ShowNum(2, 7, cdeg / 100, 3);
+    OLED_ShowNum(2, 13, cdeg % 100, 2);
+    OLED_ShowString(3, 1, "mag:");
+    OLED_ShowNum(3, 5, mag, 1);
+    HAL_Delay(2000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
