@@ -18,6 +18,10 @@ virtualFolder:
         - name: User
           files: []
           folders:
+            - name: Hadware
+              files:
+                - path: Hadware/Encoder.c
+              folders: []
             - name: Core
               files:
                 - path: Core/Src/main.c
@@ -67,6 +71,7 @@ targets:
       incList:
         - .
         - Core/Inc
+        - Hadware
         - Drivers/STM32G4xx_HAL_Driver/Inc
         - Drivers/STM32G4xx_HAL_Driver/Inc/Legacy
         - Drivers/CMSIS/Device/ST/STM32G4xx/Include
@@ -106,7 +111,7 @@ targets:
             ro-base: ""
             rw-base: ""
             xo-base: ""
-        scatterFilePath: stm32g474xx_flash.sct
+        scatterFilePath: MDK-ARM/stm32g474xx_flash.sct
         storageLayout:
           RAM:
             - id: 1

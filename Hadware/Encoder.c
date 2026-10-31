@@ -1,4 +1,6 @@
 #include "main.h"
+#include "spi.h"
+#include "Encoder.h"
 /* ============================================================
  * 功能：读取 SSI 模式下的 14bit 绝对角度
  * ============================================================ */
@@ -99,14 +101,15 @@ static uint32_t Encoder_ReadAngle(uint16_t *angle, uint8_t *mag, uint8_t *crc_rx
     valid24 = (frame32 >> 8) & 0x00FFFFFFUL;  // 取高 24 位作为有效帧,丢弃低 8 位的额外时钟
     *angle = (valid24 >> 18) & 0x3FFF;  // 取高 14bit，作为角度值
     *mag = (valid24 >> 14) & 0x0F;      // 取中间 4bit，作为磁场状态
-    *crc = valid24 & 0x3F;              // 取低 6bit，作为 CRC 校验码
+    *crc_rx = valid24 & 0x3F;           // 取低 6bit，作为 CRC 校验码
     return valid24;
 }
     
 /**
  * @brief 编码器所有功能
+ * @return 返回操作结果
  */
-void Encoder_All_Function(void)
+uint8_t Encoder_All_Function(void)
 {
     uint16_t raw14;
     uint8_t mag;
@@ -119,4 +122,14 @@ void Encoder_All_Function(void)
     crc_calc = crc6_calc((uint32_t)raw14 << 4 | mag);
     // 将 14bit 原始角度转换为 0.01 度单位，36000 = 360 * 100，16384 = 2^14
     cdeg = (int32_t)((uint32_t)raw14 * 36000 / 16384);
+
+    // 根据 CRC 校验结果处理数据
+    if (crc_calc == crc_rx) {
+        // CRC 校验成功，处理有效数据
+        return 1; // 返回成功标志
+        
+    } else {
+        // CRC 校验失败，处理错误情况
+        return 0; // 返回失败标志
+    }
 }
