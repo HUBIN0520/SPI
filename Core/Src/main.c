@@ -92,6 +92,8 @@ int main(void)
   /* USER CODE BEGIN 2 */
   OLED_Init();
   uint8_t result;
+  uint16_t angle;
+  uint8_t deg;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -100,6 +102,10 @@ int main(void)
   {
     result = Encoder_All_Function();
     OLED_ShowNum(1, 1, result, 3);
+    angle =cdeg / 100;
+    deg = cdeg % 100;
+    OLED_ShowNum(2, 1, angle, 3);
+    OLED_ShowNum(2, 5, deg, 2);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
