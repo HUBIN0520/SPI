@@ -117,14 +117,14 @@
 /**
   * @brief  Variable used for Program/Erase sectors under interruption
   */
-FLASH_ProcessTypeDef pFlash  = {HAL_UNLOCKED,
-                                HAL_FLASH_ERROR_NONE,
-                                FLASH_PROC_NONE,
-                                0U,
-                                FLASH_BANK_1,
-                                0U,
-                                0U,
-                                FLASH_CACHE_DISABLED};
+FLASH_ProcessTypeDef pFlash  = {.Lock = HAL_UNLOCKED,
+                                .ErrorCode = HAL_FLASH_ERROR_NONE,
+                                .ProcedureOnGoing = FLASH_PROC_NONE,
+                                .Address = 0U,
+                                .Bank = FLASH_BANK_1,
+                                .Page = 0U,
+                                .NbPagesToErase = 0U,
+                                .CacheToReactivate = FLASH_CACHE_DISABLED};
 /**
   * @}
   */
@@ -791,3 +791,4 @@ static void FLASH_Program_Fast(uint32_t Address, uint32_t DataAddress)
 /**
   * @}
   */
+

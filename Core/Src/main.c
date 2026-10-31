@@ -99,9 +99,9 @@ int main(void)
   while (1)
   {
     result = Encoder_All_Function();
-    OLED_ShowNum(0, 0, result, 3);
+    OLED_ShowNum(1, 1, result, 3);
     /* USER CODE END WHILE */
-    
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

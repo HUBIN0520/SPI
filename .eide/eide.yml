@@ -21,6 +21,7 @@ virtualFolder:
             - name: Hadware
               files:
                 - path: Hadware/Encoder.c
+                - path: Hadware/OLED.c
               folders: []
             - name: Core
               files:
