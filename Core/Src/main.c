@@ -98,6 +98,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    Encoder_All_Function();
     OLED_ShowString(1,1,"result:");
     OLED_ShowNum(1, 8, Encoder_All_Function(), 3);
     OLED_ShowString(2, 1, "angle:");
@@ -106,7 +107,7 @@ int main(void)
     OLED_ShowNum(2, 11, cdeg % 100, 2);
     OLED_ShowString(3, 1, "mag:");
     OLED_ShowNum(3, 5, mag, 1);
-    HAL_Delay(2000);
+    HAL_Delay(100);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
