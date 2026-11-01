@@ -49,18 +49,15 @@ static HAL_StatusTypeDef Encoder_Read3(uint8_t rx[3])
     return status;
 }
 
-/**
- * @brief 计算 CRC6 校验码
- * @param data18 18bit 数据
- * @return CRC6 校验码
- */
+
+
 static uint8_t crc6_calc(uint32_t data18)
 {
-    uint8_t crc = 0U;
+   uint8_t crc = 0U;
     for (int i = 17; i >= 0; i--) {
 
         // 取 CRC6 的最高位,bit5移到bit0,并将这个位（得到的0或1）存入 top 变量
-        uint8_t top = (uint8_t)((crc >> 5) & 0x01);
+       uint8_t top = (uint8_t)((crc >> 5) & 0x01);
         /*
         crc << 1： 左移一位，丢弃最高位，空出最低位
         (data18 >> i) & 0x01U：取 data18 的第 i 位，0 或 1
@@ -72,11 +69,13 @@ static uint8_t crc6_calc(uint32_t data18)
         //x^6+x+1 多项式的二进制表示为 1  000011，低 6 位为 000011，即 0x03
         //如果最高位为 1，则异或多项式 0x03（x^6+x+1），翻转后两位
         if (top != 0) {
-            crc ^= 0x03;
-        }
-    }
-    return crc;
+          crc ^= 0x03;
+      }
+   }
+  return crc;
 }
+
+
 
 /**
  * @brief 读取编码器角度、磁场状态和 CRC 校验码

@@ -35,7 +35,7 @@ extern uint16_t raw14;
  *   F: 1111 磁场状态编码无效，旋钮被按压，超速
  *
  * 注意：Mg[1:0] 是一个两位状态编码，不是两个独立标志。
- * CRC 校验失败时，mag 保持上一次校验成功后的数值。
+ * 当前 CRC 校验已关闭，mag 随每次 SPI 读取结果更新。
  */
 extern uint8_t mag;
 extern uint8_t crc_rx;
