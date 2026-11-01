@@ -106,7 +106,7 @@ int main(void)
     OLED_ShowNum(2, 7, cdeg / 100, 3);
     OLED_ShowNum(2, 11, cdeg % 100, 2);
     OLED_ShowString(3, 1, "mag:");
-    OLED_ShowNum(3, 5, mag, 1);
+    OLED_ShowHexNum(3, 5, mag, 1);
     HAL_Delay(100);
     /* USER CODE END WHILE */
 

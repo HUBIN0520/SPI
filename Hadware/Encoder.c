@@ -1,25 +1,22 @@
-#include "main.h"
-#include "spi.h"
-#include "Encoder.h"
 /* ============================================================
- * 功能：读取 SSI 模式下的 14bit 绝对角度
- * ============================================================ */
-/* ============================================================ 
+ * 功能：读取 MT6701 SSI 模式下的 14bit 绝对角度
+ * ============================================================
  * 接线：
  *   编码器 DO  (A)  ---- PA6  (SPI1_MISO，上拉输入)
  *   编码器 CLK (B)  ---- PA5  (SPI1_SCK)
  *   编码器 CSN (Z)  ---- PA4  (GPIO 软件片选，低有效)
- *   编码器 VCC ------- 5V / 3.3V
+ *   编码器 VCC ------- 5V
  *   编码器 GND ------- GND
+ *
  * SPI 参数：
- *   主机、8bit、MSB 先行、Mode 2（CPOL=1，CPHA=0）、1MHz
+ *   主机、8bit、MSB 先行、Mode 1（CPOL=0，CPHA=1）、1.125MHz
  *
  * SSI 帧：
  *   D[13:0] 角度 + Mg[3:0] 磁场状态 + CRC[5:0] 校验
  *   CRC 多项式 x^6+x+1，覆盖前 18bit
  *
- * 编码器首位尚未就绪，因此每次读 32bit，左移一位丢弃首位，
- * 再取高 24bit 作为有效帧。
+ * CSN 拉低后严格发送 24 个时钟。编码器在 CLK 上升沿更新数据，
+ * STM32 在下降沿采样。
  * ============================================================ */
 #include "main.h"
 #include "spi.h"
@@ -36,17 +33,17 @@ int32_t cdeg;// 角度，单位为 0.01 度
 #define SPI_LOW()   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET)
 
 /**
- * @brief 读取编码器数据
+ * @brief 读取编码器的一帧 24bit 数据
  * @param rx 接收数据的数组
  * @return HAL_OK 表示读取成功
  */
-static HAL_StatusTypeDef Encoder_Read4(uint8_t rx[4])
+static HAL_StatusTypeDef Encoder_Read3(uint8_t rx[3])
 {
-    const uint8_t tx[4] = {0};
+    const uint8_t tx[3] = {0};
     HAL_StatusTypeDef status;
 
     SPI_LOW();
-    status = HAL_SPI_TransmitReceive(&hspi1, tx, rx, 4, 10);
+    status = HAL_SPI_TransmitReceive(&hspi1, tx, rx, 3, 10);
     SPI_HIGH();
 
     return status;
@@ -85,32 +82,26 @@ static uint8_t crc6_calc(uint32_t data18)
  * @brief 读取编码器角度、磁场状态和 CRC 校验码
  * @param angle 指向存储角度的变量的指针
  * @param mag 指向存储磁场状态的变量的指针
- * @param crc 指向存储 CRC 校验码的变量的指针
- * @param valid24 指向存储有效 24bit 数据的变量的指针
+ * @param crc_rx 指向存储 CRC 校验码的变量的指针
+ * @param frame24 指向存储完整 24bit 数据的变量的指针
  * @return 1 表示 SPI 读取成功，0 表示失败
  */
 static uint8_t Encoder_ReadAngle(uint16_t *angle, uint8_t *mag, uint8_t *crc_rx,
-                                 uint32_t *valid24)
+                                 uint32_t *frame24)
 {
-    uint8_t rx[4];// 接收缓冲区，4 字节
-    uint32_t frame32;// 32bit 帧数据
+    uint8_t rx[3];
 
-    if (Encoder_Read4(rx) != HAL_OK)
+    if (Encoder_Read3(rx) != HAL_OK)
     {
         return 0;
     }
 
-    // 将接收到的 4 字节数据组合成一个 32 位整数
-    frame32 = ((uint32_t)rx[0] << 24) | 
-    ((uint32_t)rx[1] << 16) | 
-    ((uint32_t)rx[2] << 8) |
-    (uint32_t)rx[3];
-
-    frame32 <<= 1;  // 左移一位，丢弃首位无效数据
-    *valid24 = (frame32 >> 8) & 0x00FFFFFFUL;  // 取高 24 位作为有效帧,丢弃低 8 位的额外时钟
-    *angle = (*valid24 >> 18) & 0x3FFF;  // 取高 14bit，作为角度值
-    *mag = (*valid24 >> 14) & 0x0F;      // 取中间 4bit，作为磁场状态
-    *crc_rx = *valid24 & 0x3F;           // 取低 6bit，作为 CRC 校验码
+    *frame24 = ((uint32_t)rx[0] << 16) |
+               ((uint32_t)rx[1] << 8) |
+                (uint32_t)rx[2];
+    *angle = (*frame24 >> 10) & 0x3FFFU;
+    *mag = (*frame24 >> 6) & 0x0FU;
+    *crc_rx = *frame24 & 0x3FU;
     return 1;
 }
     
@@ -124,10 +115,10 @@ uint8_t Encoder_All_Function(void)
     uint8_t mag_rx;
     uint8_t crc_rx_frame;
     uint8_t crc_calc_frame;
-    uint32_t valid24_frame;
+    uint32_t frame24;
     int32_t cdeg_frame;
 
-    if (Encoder_ReadAngle(&raw14_rx, &mag_rx, &crc_rx_frame, &valid24_frame) == 0)
+    if (Encoder_ReadAngle(&raw14_rx, &mag_rx, &crc_rx_frame, &frame24) == 0)
     {
         return 0;
     }
@@ -144,7 +135,7 @@ uint8_t Encoder_All_Function(void)
         mag = mag_rx;
         crc_rx = crc_rx_frame;
         crc_calc = crc_calc_frame;
-        valid24 = valid24_frame;
+        valid24 = frame24;
         cdeg = cdeg_frame;
         return 1; // 返回成功标志
         
