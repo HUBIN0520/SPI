@@ -91,6 +91,7 @@ int main(void)
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
   OLED_Init();
+  HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, GPIO_PIN_RESET);
   /* USER CODE END 2 */
 
   /* Infinite loop */
