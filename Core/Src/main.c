@@ -98,9 +98,9 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    Encoder_All_Function();
+    int result = Encoder_All_Function();
     OLED_ShowString(1,1,"result:");
-    OLED_ShowNum(1, 8, Encoder_All_Function(), 3);
+    OLED_ShowNum(1, 8, result, 3);
     OLED_ShowString(2, 1, "angle:");
     OLED_ShowString(2, 10, ".");
     OLED_ShowNum(2, 7, cdeg / 100, 3);
