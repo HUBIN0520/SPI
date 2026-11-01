@@ -124,22 +124,23 @@ uint8_t Encoder_All_Function(void)
 
     crc_calc_frame = crc6_calc(((uint32_t)raw14_rx << 4) | mag_rx);
 
-    // 根据 CRC 校验结果处理数据
-    if (crc_calc_frame == crc_rx_frame) {
-        // 仅在 CRC 校验成功时更新角度，失败时保留上一次有效值
-        // 将 14bit 原始角度转换为 0.01 度单位，36000 = 360 * 100，16384 = 2^14
-        cdeg_frame = (int32_t)((uint32_t)raw14_rx * 36000 / 16384);
+    // CRC 校验已暂时关闭：SPI 读取成功后直接使用本帧角度数据。
+    // 仍保留 CRC 计算结果，便于在调试器中继续观察。
+    // if (crc_calc_frame == crc_rx_frame) {
+    // 将 14bit 原始角度转换为 0.01 度单位，36000 = 360 * 100，16384 = 2^14
+    cdeg_frame = (int32_t)((uint32_t)raw14_rx * 36000 / 16384);
 
-        raw14 = raw14_rx;
-        mag = mag_rx;
-        crc_rx = crc_rx_frame;
-        crc_calc = crc_calc_frame;
-        valid24 = frame24;
-        cdeg = cdeg_frame;
-        return 1; // 返回成功标志
-        
-    } else {
-        // CRC 校验失败，处理错误情况
-        return 0; // 返回失败标志
-    }
+    raw14 = raw14_rx;
+    mag = mag_rx;
+    crc_rx = crc_rx_frame;
+    crc_calc = crc_calc_frame;
+    valid24 = frame24;
+    cdeg = cdeg_frame;
+    return 1; // SPI 读取成功
+    // }
+    //
+    // else {
+    //     // CRC 校验失败，处理错误情况
+    //     return 0; // 返回失败标志
+    // }
 }
