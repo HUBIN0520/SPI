@@ -55,26 +55,23 @@ static HAL_StatusTypeDef Encoder_Read3(uint8_t rx[3])
 
 static uint8_t crc6_calc(uint32_t data18)
 {
-   uint8_t crc = 0U;
+    uint8_t crc = 0U;
+
     for (int i = 17; i >= 0; i--) {
-
-        // 取 CRC6 的最高位,bit5移到bit0,并将这个位（得到的0或1）存入 top 变量
-       uint8_t top = (uint8_t)((crc >> 5) & 0x01);
         /*
-        crc << 1： 左移一位，丢弃最高位，空出最低位
-        (data18 >> i) & 0x01U：取 data18 的第 i 位，0 或 1
-         |：将 data18 的第 i 位 放入 crc 的最低位
-         & 0x3FU：保留 crc 的低 6 位，丢弃高位
-        */
-        crc = (uint8_t)(((crc << 1) | ((data18 >> i) & 0x01)) & 0x3F);
+         * MT6701 要求数据最高位先移入多项式：
+         * 先让 CRC 最高位与当前数据位异或，再左移并条件异或 x^6+x+1。
+         */
+        uint8_t bit = (uint8_t)(((crc >> 5) ^ (data18 >> i)) & 0x01U);
 
-        //x^6+x+1 多项式的二进制表示为 1  000011，低 6 位为 000011，即 0x03
-        //如果最高位为 1，则异或多项式 0x03（x^6+x+1），翻转后两位
-        if (top != 0) {
-          crc ^= 0x03;
-      }
-   }
-  return crc;
+        crc = (uint8_t)((crc << 1) & 0x3FU);
+
+        if (bit != 0U) {
+            crc ^= 0x03U;
+        }
+    }
+
+    return crc;
 }
 
 
@@ -124,9 +121,11 @@ uint8_t Encoder_All_Function(void)
 
     crc_calc_frame = crc6_calc(((uint32_t)raw14_rx << 4) | mag_rx);
 
-    // CRC 校验已暂时关闭：SPI 读取成功后直接使用本帧角度数据。
-    // 仍保留 CRC 计算结果，便于在调试器中继续观察。
-    // if (crc_calc_frame == crc_rx_frame) {
+    if (crc_calc_frame != crc_rx_frame)
+    {
+        return 0;
+    }
+
     // 将 14bit 原始角度转换为 0.01 度单位，36000 = 360 * 100，16384 = 2^14
     cdeg_frame = (int32_t)((uint32_t)raw14_rx * 36000 / 16384);
 
@@ -136,11 +135,5 @@ uint8_t Encoder_All_Function(void)
     crc_calc = crc_calc_frame;
     valid24 = frame24;
     cdeg = cdeg_frame;
-    return 1; // SPI 读取成功
-    // }
-    //
-    // else {
-    //     // CRC 校验失败，处理错误情况
-    //     return 0; // 返回失败标志
-    // }
+    return 1;
 }

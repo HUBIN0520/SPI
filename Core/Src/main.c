@@ -100,7 +100,7 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-     int result = Encoder_All_Function();
+     uint8_t result = Encoder_All_Function();
     // OLED_ShowString(1,1,"result:");
     // OLED_ShowNum(1, 8, result, 3);
     // OLED_ShowString(2, 1, "angle:");
