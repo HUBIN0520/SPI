@@ -100,18 +100,16 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-     uint8_t result = Encoder_All_Function();
-    // OLED_ShowString(1,1,"result:");
-    // OLED_ShowNum(1, 8, result, 3);
-    // OLED_ShowString(2, 1, "angle:");
-    // OLED_ShowString(2, 10, ".");
-    // OLED_ShowNum(2, 7, cdeg / 100, 3);
-    // OLED_ShowNum(2, 11, cdeg % 100, 2);
-    // OLED_ShowString(3, 1, "mag:");
-    // OLED_ShowHexNum(3, 5, mag, 1);
-    // HAL_Delay(100);
-    Serial_Printf("cedg:%d,rx:%d,cacl:%d\r\n", cdeg,crc_rx_frame,crc_calc_frame);
+    uint8_t result = Encoder_All_Function();
+    OLED_ShowString(1,1,"result:");
+    OLED_ShowNum(1, 8, result, 3);
+    OLED_ShowString(2, 1, "angle:");
+    OLED_ShowNum(2, 7, cdeg , 6);
+    OLED_ShowString(3, 1, "mag:");
+    OLED_ShowHexNum(3, 5, mag, 1);
+    Serial_Printf("cedg:%.2f,rx:%d,cacl:%d\r\n", cdeg,crc_rx_frame,crc_calc_frame);
     HAL_Delay(100);
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

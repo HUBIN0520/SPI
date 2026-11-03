@@ -29,7 +29,7 @@ uint8_t crc_calc;
 uint8_t crc_rx_frame;
 uint8_t crc_calc_frame;
 uint32_t valid24;
-int32_t cdeg;// 角度，单位为 0.01 度 
+double cdeg;// 角度，单位为 0.01 度 
 
 #define SPI_HIGH()  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET)
 #define SPI_LOW()   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET)
@@ -134,6 +134,6 @@ uint8_t Encoder_All_Function(void)
     crc_rx = crc_rx_frame;
     crc_calc = crc_calc_frame;
     valid24 = frame24;
-    cdeg = cdeg_frame;
+    cdeg = cdeg_frame/100.0+((cdeg_frame%100)/100.0);
     return 1;
 }
