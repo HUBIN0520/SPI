@@ -1,5 +1,6 @@
 #include "OLED_Font.h"
 #include "gpio.h"
+#include <float.h>
 
 /*引脚配置*/
 #define OLED_W_SCL(x) HAL_GPIO_WritePin(GPIOA, GPIO_PIN_8, \
@@ -170,6 +171,157 @@ uint32_t OLED_Pow(uint32_t X, uint32_t Y)
 	return Result;
 }
 
+/*
+ * Format a finite value without relying on printf floating-point support.
+ * IntLength is the minimum number of integer digits and DecLength is the
+ * exact number of fractional digits.
+ */
+static uint8_t OLED_FormatFixedPoint(double Number, uint8_t IntLength,
+                                     uint8_t DecLength, char *Text)
+{
+	uint8_t IsNegative = 0;
+	uint8_t Digits = 1;
+	uint8_t Position = 0;
+	uint8_t Index;
+	uint32_t Whole;
+	uint32_t Fraction;
+	uint32_t Scale;
+	uint32_t Value;
+	double Absolute;
+
+	if (Number != Number)
+	{
+		Text[0] = 'N';
+		Text[1] = 'a';
+		Text[2] = 'N';
+		Text[3] = '\0';
+		return 3U;
+	}
+	if (Number > DBL_MAX)
+	{
+		Text[0] = 'I';
+		Text[1] = 'n';
+		Text[2] = 'f';
+		Text[3] = '\0';
+		return 3U;
+	}
+	if (Number < -DBL_MAX)
+	{
+		Text[0] = '-';
+		Text[1] = 'I';
+		Text[2] = 'n';
+		Text[3] = 'f';
+		Text[4] = '\0';
+		return 4U;
+	}
+
+	if (IntLength < 1U)
+	{
+		IntLength = 1U;
+	}
+	if (IntLength > 10U)
+	{
+		IntLength = 10U;
+	}
+	if (DecLength > 9U)
+	{
+		DecLength = 9U;
+	}
+
+	IsNegative = (Number < 0.0) ? 1U : 0U;
+	Absolute = IsNegative ? -Number : Number;
+
+	if (Absolute > 4294967295.0)
+	{
+		Text[0] = 'O';
+		Text[1] = 'V';
+		Text[2] = 'F';
+		Text[3] = '\0';
+		return 3U;
+	}
+
+	Whole = (uint32_t)Absolute;
+	Scale = OLED_Pow(10U, DecLength);
+	Fraction = (uint32_t)((Absolute - (double)Whole) * (double)Scale + 0.5);
+
+	if (Fraction >= Scale)
+	{
+		if (Whole == UINT32_MAX)
+		{
+			Text[0] = 'O';
+			Text[1] = 'V';
+			Text[2] = 'F';
+			Text[3] = '\0';
+			return 3U;
+		}
+		Whole++;
+		Fraction -= Scale;
+	}
+
+	Value = Whole;
+	while (Value >= 10U)
+	{
+		Value /= 10U;
+		Digits++;
+	}
+	if (Digits < IntLength)
+	{
+		Digits = IntLength;
+	}
+
+	if (IsNegative)
+	{
+		Text[Position++] = '-';
+	}
+	for (Index = 0U; Index < Digits; Index++)
+	{
+		Value = Whole / OLED_Pow(10U, Digits - Index - 1U) % 10U;
+		Text[Position++] = (char)(Value + '0');
+	}
+	if (DecLength > 0U)
+	{
+		Text[Position++] = '.';
+		for (Index = 0U; Index < DecLength; Index++)
+		{
+			Value = Fraction / OLED_Pow(10U, DecLength - Index - 1U) % 10U;
+			Text[Position++] = (char)(Value + '0');
+		}
+	}
+
+	Text[Position] = '\0';
+	return Position;
+}
+
+static void OLED_ShowFixedPoint(uint8_t Line, uint8_t Column, double Number,
+                                uint8_t IntLength, uint8_t DecLength)
+{
+	char Text[24];
+	uint8_t Length;
+	uint8_t Available;
+
+	if ((Line < 1U) || (Line > 4U) || (Column < 1U) || (Column > 16U))
+	{
+		return;
+	}
+
+	Length = OLED_FormatFixedPoint(Number, IntLength, DecLength, Text);
+	Available = (uint8_t)(17U - Column);
+	if (Length > Available)
+	{
+		if (Available >= 3U)
+		{
+			OLED_ShowString(Line, Column, "ERR");
+		}
+		else
+		{
+			OLED_ShowChar(Line, Column, '!');
+		}
+		return;
+	}
+
+	OLED_ShowString(Line, Column, Text);
+}
+
 /**
   * @brief  OLED显示数字（十进制，正数）
   * @param  Line 起始行位置，范围：1~4
@@ -255,6 +407,36 @@ void OLED_ShowBinNum(uint8_t Line, uint8_t Column, uint32_t Number, uint8_t Leng
 	{
 		OLED_ShowChar(Line, Column + i, Number / OLED_Pow(2, Length - i - 1) % 2 + '0');
 	}
+}
+
+/**
+  * @brief  Display a float with a fixed number of fractional digits.
+  * @param  Line  Start line, range: 1~4.
+  * @param  Column  Start column, range: 1~16.
+  * @param  Number  Float value to display.
+  * @param  IntLength  Minimum number of integer digits, range: 1~10.
+  * @param  DecLength  Number of fractional digits, range: 0~9.
+  * @retval None
+  */
+void OLED_ShowFloatNum(uint8_t Line, uint8_t Column, float Number,
+                       uint8_t IntLength, uint8_t DecLength)
+{
+	OLED_ShowFixedPoint(Line, Column, (double)Number, IntLength, DecLength);
+}
+
+/**
+  * @brief  Display a double with a fixed number of fractional digits.
+  * @param  Line  Start line, range: 1~4.
+  * @param  Column  Start column, range: 1~16.
+  * @param  Number  Double value to display.
+  * @param  IntLength  Minimum number of integer digits, range: 1~10.
+  * @param  DecLength  Number of fractional digits, range: 0~9.
+  * @retval None
+  */
+void OLED_ShowDoubleNum(uint8_t Line, uint8_t Column, double Number,
+                        uint8_t IntLength, uint8_t DecLength)
+{
+	OLED_ShowFixedPoint(Line, Column, Number, IntLength, DecLength);
 }
 
 /**

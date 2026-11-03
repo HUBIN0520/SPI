@@ -104,7 +104,7 @@ int main(void)
     OLED_ShowString(1,1,"result:");
     OLED_ShowNum(1, 8, result, 3);
     OLED_ShowString(2, 1, "angle:");
-    OLED_ShowNum(2, 7, cdeg , 6);
+    OLED_ShowFloatNum(2, 7, cdeg, 3, 2);
     OLED_ShowString(3, 1, "mag:");
     OLED_ShowHexNum(3, 5, mag, 1);
     Serial_Printf("cedg:%.2f,rx:%d,cacl:%d\r\n", cdeg,crc_rx_frame,crc_calc_frame);
