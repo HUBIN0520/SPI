@@ -42,5 +42,6 @@ extern uint8_t crc_rx;
 extern uint8_t crc_calc;
 extern uint32_t valid24;
 extern int32_t cdeg;// 角度，单位为 0.01 
-
+extern uint8_t crc_calc_frame;
+extern uint8_t crc_rx_frame;
 #endif // !__Encoder_H

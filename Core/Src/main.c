@@ -19,8 +19,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "spi.h"
+#include "usart.h"
 #include "gpio.h"
-
+#include "Serio.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "Encoder.h"
@@ -89,6 +90,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_SPI1_Init();
+  MX_UART4_Init();
   /* USER CODE BEGIN 2 */
   OLED_Init();
   HAL_GPIO_WritePin(GPIOD, GPIO_PIN_2, GPIO_PIN_RESET);
@@ -98,15 +100,17 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    int result = Encoder_All_Function();
-    OLED_ShowString(1,1,"result:");
-    OLED_ShowNum(1, 8, result, 3);
-    OLED_ShowString(2, 1, "angle:");
-    OLED_ShowString(2, 10, ".");
-    OLED_ShowNum(2, 7, cdeg / 100, 3);
-    OLED_ShowNum(2, 11, cdeg % 100, 2);
-    OLED_ShowString(3, 1, "mag:");
-    OLED_ShowHexNum(3, 5, mag, 1);
+     int result = Encoder_All_Function();
+    // OLED_ShowString(1,1,"result:");
+    // OLED_ShowNum(1, 8, result, 3);
+    // OLED_ShowString(2, 1, "angle:");
+    // OLED_ShowString(2, 10, ".");
+    // OLED_ShowNum(2, 7, cdeg / 100, 3);
+    // OLED_ShowNum(2, 11, cdeg % 100, 2);
+    // OLED_ShowString(3, 1, "mag:");
+    // OLED_ShowHexNum(3, 5, mag, 1);
+    // HAL_Delay(100);
+    Serial_Printf("cedg:%d,rx:%d,cacl:%d\r\n", cdeg,crc_rx_frame,crc_calc_frame);
     HAL_Delay(100);
     /* USER CODE END WHILE */
 

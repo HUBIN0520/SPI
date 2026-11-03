@@ -26,6 +26,8 @@ uint16_t raw14;
 uint8_t mag;
 uint8_t crc_rx;
 uint8_t crc_calc;
+uint8_t crc_rx_frame;
+uint8_t crc_calc_frame;
 uint32_t valid24;
 int32_t cdeg;// 角度，单位为 0.01 度 
 
@@ -112,8 +114,6 @@ uint8_t Encoder_All_Function(void)
 {
     uint16_t raw14_rx;
     uint8_t mag_rx;
-    uint8_t crc_rx_frame;
-    uint8_t crc_calc_frame;
     uint32_t frame24;
     int32_t cdeg_frame;
 
